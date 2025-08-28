@@ -1,5 +1,6 @@
 package patterns.java.spring.lab_padroes_projeto.service;
 
+import patterns.java.spring.lab_padroes_projeto.dtos.ClienteDto;
 import patterns.java.spring.lab_padroes_projeto.model.Client;
 
 public interface ClienteService {
@@ -7,9 +8,9 @@ public interface ClienteService {
 
     Client buscarPorId(Long id);
 
-    void inserir(Client cliente);
+    String inserir(ClienteDto cliente);
 
-    void atualizar(Long id, Client client);
+    String atualizar(Long id, ClienteDto client);
 
     void deletar(Long id);
 }

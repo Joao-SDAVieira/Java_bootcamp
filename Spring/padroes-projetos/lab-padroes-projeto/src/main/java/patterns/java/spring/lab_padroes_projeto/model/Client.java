@@ -6,9 +6,12 @@ import jakarta.persistence.*;
 public class Client {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nome;
+    @ManyToOne
+    @JoinColumn(name = "endereco_id", nullable = false)
+    private Endereco endereco;
 
     public Endereco getEndereco() {
         return endereco;
@@ -34,7 +37,5 @@ public class Client {
         this.id = id;
     }
 
-    @ManyToOne
-    private Endereco endereco;
 
 }

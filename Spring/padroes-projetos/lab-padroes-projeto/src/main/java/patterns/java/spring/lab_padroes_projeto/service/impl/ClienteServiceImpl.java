@@ -2,6 +2,7 @@ package patterns.java.spring.lab_padroes_projeto.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import patterns.java.spring.lab_padroes_projeto.dtos.ClienteDto;
 import patterns.java.spring.lab_padroes_projeto.model.Client;
 import patterns.java.spring.lab_padroes_projeto.model.ClienteRepository;
 import patterns.java.spring.lab_padroes_projeto.model.Endereco;
@@ -33,17 +34,18 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     @Override
-    public void inserir(Client cliente){
-        salvarClienteComCep(cliente);
+    public String inserir(ClienteDto cliente){
+        return salvarClienteComCep(cliente);
     }
 
 
     @Override
-    public void atualizar(Long id, Client client){
+    public String atualizar(Long id, ClienteDto client){
         Optional<Client> clientedb = clienteRepository.findById(id);
         if(clientedb.isPresent()){
-            salvarClienteComCep(client);
+             return salvarClienteComCep(client);
         }
+        return "Cliente não encontrado";
     }
 
     @Override
@@ -51,18 +53,28 @@ public class ClienteServiceImpl implements ClienteService {
         clienteRepository.deleteById(id);
     }
 
-    private void salvarClienteComCep(Client cliente) {
-        String cep = cliente.getEndereco().getCep();
+    private String salvarClienteComCep(ClienteDto clienteDto) {
+        Optional<Endereco> endereco =  enderecoRepository.findById(clienteDto.enderecoId());
 
-        Endereco enderecoDb = enderecoRepository.findById(cep).orElseGet(
-                () -> {
-                    Endereco novoEndereco =  viaCepService.consultarCep(cep);
-                    enderecoRepository.save(novoEndereco);
-                    return novoEndereco;
-                }
-        );
-        cliente.setEndereco(enderecoDb);
+        if (endereco.isEmpty()){
+            return "Endereço não encontrado!";
+        }
+
+//        String cep = cliente.getEndereco().getCep();
+
+//        Endereco enderecoDb = enderecoRepository.findById(cep).orElseGet(
+//                () -> {
+//                    Endereco novoEndereco =  viaCepService.consultarCep(cep);
+//                    enderecoRepository.save(novoEndereco);
+//                    return novoEndereco;
+//                }
+//        );
+//        cliente.setEndereco(enderecoDb);
+        Client cliente = new Client();
+        cliente.setNome(clienteDto.nome());
+        cliente.setEndereco(endereco.get());
 
         clienteRepository.save(cliente);
+        return "Cliente criado com sucesso ao cep " + endereco.get().getCep();
     }
 }

@@ -4,6 +4,7 @@ package patterns.java.spring.lab_padroes_projeto.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import patterns.java.spring.lab_padroes_projeto.dtos.ClienteDto;
 import patterns.java.spring.lab_padroes_projeto.model.Client;
 import patterns.java.spring.lab_padroes_projeto.service.ClienteService;
 
@@ -25,15 +26,13 @@ public class ClienteRestController {
     }
 
     @PostMapping
-    public ResponseEntity<Client> inserir(@RequestBody Client cliente){
-        clienteService.inserir(cliente);
-        return ResponseEntity.ok(cliente);
+    public String inserir(@RequestBody ClienteDto cliente){
+        return clienteService.inserir(cliente);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Client> atualizar(@PathVariable Long id, @RequestBody Client cliente){
-        clienteService.atualizar(id, cliente);
-        return ResponseEntity.ok(cliente);
+    public String atualizar(@PathVariable Long id, @RequestBody ClienteDto cliente){
+        return clienteService.atualizar(id, cliente);
     }
 
     @DeleteMapping("/{id}")
@@ -41,5 +40,4 @@ public class ClienteRestController {
         clienteService.deletar(id);
         return ResponseEntity.ok().build();
     }
-
 }
