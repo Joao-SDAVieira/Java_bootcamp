@@ -1,0 +1,1 @@
+ALTER TABLE employees_audit add column employee_id BIGINT NOT NULL;
