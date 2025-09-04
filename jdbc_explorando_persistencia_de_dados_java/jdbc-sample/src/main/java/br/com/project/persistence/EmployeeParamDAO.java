@@ -1,6 +1,8 @@
 package br.com.project.persistence;
 
+import br.com.project.persistence.entity.ContactEnity;
 import br.com.project.persistence.entity.EmployeeEntity;
+import br.com.project.persistence.entity.ModuleEntity;
 import com.mysql.cj.jdbc.StatementImpl;
 
 import java.sql.SQLException;
@@ -15,10 +17,14 @@ import static java.time.ZoneOffset.UTC;
 import static java.util.TimeZone.LONG;
 
 public class EmployeeParamDAO {
+    private final ContactDAO contactDAO = new ContactDAO();
+
+    private final AccessDAO accessDAO = new AccessDAO();
+
     public void insert(final EmployeeEntity entity){
         try(var connection = ConnectionUtil.getConnection();
         var statemant = connection.prepareStatement(
-                "\"INSERT INTO employees (name, salary, birthday) values (?, ?, ?);"
+                "INSERT INTO employees (name, salary, birthday) values (?, ?, ?);"
         )
         ){
             statemant.setString(1, entity.getName());
@@ -27,9 +33,14 @@ public class EmployeeParamDAO {
                     3, Timestamp.valueOf(entity.getBirthday().atZoneSimilarLocal(UTC).toLocalDateTime())
             );
             statemant.executeUpdate();
+
+
             System.out.printf("Foram aafetados %s registros na base de dados", statemant.getUpdateCount());
             if (statemant instanceof StatementImpl impl){
                 entity.setId(impl.getLastInsertID());
+                entity.getModules().stream().map(ModuleEntity::getId).forEach(
+                        module_id -> accessDAO.insert(entity.getId(), module_id)
+                );
             }
         }catch (SQLException exe){
             exe.printStackTrace();
@@ -127,6 +138,7 @@ public class EmployeeParamDAO {
                 entity.setSalary(resultSet.getBigDecimal("salary"));
                 var birthdayInstant = resultSet.getTimestamp("birthday").toInstant();
                 entity.setBirthday(OffsetDateTime.ofInstant(birthdayInstant, UTC));
+                entity.setContact(contactDAO.findByEmployeeId(resultSet.getLong("id")));
                 entities.add(entity);
             }
         }catch (SQLException exe){
@@ -137,18 +149,39 @@ public class EmployeeParamDAO {
 
     public EmployeeEntity findById(final Long id){
         EmployeeEntity employeeEntity = new EmployeeEntity();
+        var sql = """
+                SELECT e.id, e.name, e.salary, e.birthday, c.id as contact_id, c.desciption, c.`type`
+                FROM employees e LEFT JOIN contacts c ON c.employee_id = e.id
+                WHERE e.id = ?;
+                """;
 
         try(var connection = ConnectionUtil.getConnection();
-            var statemant = connection.prepareStatement("SELECT * FROM employees WHERE id = ?")
+            var statemant = connection.prepareStatement(sql)
         ){
             statemant.setLong(1, id);
+            statemant.executeQuery();
             var resultSet = statemant.getResultSet();
+
             if (resultSet.next()){
+                System.out.println(
+                        "contact_id=" + resultSet.getLong("contact_id") +
+                                ", desciption=" + resultSet.getString("desciption") +
+                                ", type=" + resultSet.getString("type")
+                );
+
                 employeeEntity.setId(resultSet.getLong("id"));
                 employeeEntity.setName(resultSet.getString("name"));
                 employeeEntity.setSalary(resultSet.getBigDecimal("salary"));
                 var birthdayInstant = resultSet.getTimestamp("birthday").toInstant();
                 employeeEntity.setBirthday(OffsetDateTime.ofInstant(birthdayInstant, UTC));
+                employeeEntity.setContact(new ArrayList<>());
+                do {
+                    var contact = new ContactEnity();
+                    contact.setType(resultSet.getString("type"));
+                    contact.setDescription(resultSet.getString("desciption"));
+                    contact.setId(resultSet.getLong("contact_id"));
+                    employeeEntity.getContacts().add(contact);
+                } while (resultSet.next());
             }
         }catch (SQLException exe){
             exe.printStackTrace();
